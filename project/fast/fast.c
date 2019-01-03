@@ -10,7 +10,6 @@ typedef struct frac
   intmax_t d;
 } frac;
 
-
 /*
 * Function for finding out which sign the frac have
 * –1: negative, 0: zero, 1: positive 
@@ -20,6 +19,9 @@ int sign(frac frac)
   return (frac.n < 0) ? (-1) : (frac.n == 0 ? 0 : 1);
 }
 
+/**
+ * Printer function for debugging purposes
+*/
 void printer(size_t rows, size_t cols, frac fracs[rows][cols])
 {
   fprintf(stderr, "PRINTER\n");
@@ -116,9 +118,7 @@ frac div_frac(frac a, frac b)
     {
       f.d *= -1;
       if (f.n > 0)
-      {
         f.n *= -1;
-      }
     }
 
     return reduce(f);
@@ -129,7 +129,7 @@ frac div_frac(frac a, frac b)
 /*
 * Function for swapping rows
 */
-void swap_rows(int from, int to, size_t rows, size_t cols, frac a[rows][cols])
+void swap_rows(size_t from, size_t to, size_t rows, size_t cols, frac a[rows][cols])
 {
   frac temp;
   for (size_t i = 0; i < cols; i++)
@@ -143,7 +143,7 @@ void swap_rows(int from, int to, size_t rows, size_t cols, frac a[rows][cols])
 /*
 * Function for swapping columns
 */
-void swap_cols(int el_var, size_t rows, size_t cols, frac a[rows][cols])
+void swap_cols(size_t el_var, size_t rows, size_t cols, frac a[rows][cols])
 {
   frac temp;
   for (size_t i = 0; i < rows; i++)
@@ -157,10 +157,8 @@ void swap_cols(int el_var, size_t rows, size_t cols, frac a[rows][cols])
 void row_divide(size_t row, size_t rows, size_t cols, frac a[rows][cols])
 {
   for (size_t i = 0; i < cols; i++)
-  {
     if (i != cols - 2)
       a[row][i] = div_frac(a[row][i], a[row][cols - 2]);
-  }
 }
 
 /*
@@ -206,8 +204,7 @@ bool fm_frac(size_t rows, size_t cols, frac A[rows][cols])
   size_t i, j, l;
   // step 1
   size_t v = cols - 1; // The real amount of variables
-  // size_t row_p = v - 1;
-  // size_t s = rows;
+  
   // step 2
   size_t n_pos = 0;
   size_t n_neg = rows;
@@ -215,9 +212,7 @@ bool fm_frac(size_t rows, size_t cols, frac A[rows][cols])
   sort_rows(rows, cols, A, &n_pos, &n_neg);
   
   for (i = 0; i < rows; i++)
-  {
     row_divide(i, rows, cols, A);
-  }
   
   // check if there are more variables to remove
   if (v > 1)
@@ -231,78 +226,62 @@ bool fm_frac(size_t rows, size_t cols, frac A[rows][cols])
 
     // create new array for exclusion of the current variable
     frac N[r_new][v];
+   
+    // keep track of current row
     size_t r = 0;
+   
     // for the creation of the new matrix
     frac frac = {.n = -1, .d = 1};
-    for (i = 0; i < n_pos; i++) {
+
+    // move all pos and neg to new matrix
+    for (i = 0; i < n_pos; i++)
       for (j = n_pos; j < n_neg; j++)
       {
         for (l = 0; l < v; l++)
-        {
           N[r][l] = add_frac(mul_frac(A[j][l], frac), A[i][l]);
-        }
-        // N[r][row_p] = add_frac(A[i][v], mul_frac(frac, A[j][v]));
         r++;
       }
-    }
     // Handle the ones without any of the current variable
     for (i = n_neg; i < rows; i++)
     {
       for (j = 0; j < v; j++)
-      {
         N[r][j] = A[i][j];
-      }
-      // N[r][row_p] = A[i][v];
       r++;
     }
-
-    fprintf(stderr, "next iteration or done\n");
-    printer(r_new, v, N);
-    return fm_frac(r_new, v, N);
+   return fm_frac(r_new, v, N);
   }
   else
   {
     // no more variable to remove take final steps for finding out if the system is solvable
     // a quick check if the system is solvable (All pos or all Negative)
     if ((rows - n_neg + n_pos * (n_neg - n_pos)) == 0)
-    {
       return true;
-    }
-    // get starting values (start from each side)
+    // starting values for min max check
     frac max = A[n_pos][v];
     frac min = A[0][v];
     // search through the values to find new max and min
+    // find the smallest value of the positive ones
     for (i = 1; i < n_pos; i++)
-    {
-      if (comp_frac(A[i][v], min) == -1)
-      {
-        min = A[i][v];
-      }
-    }
-
+      min = comp_frac(A[i][v], min) == -1 ? A[i][v] : min;
+    // find the largest value of the negative ones
     for (i = n_pos + 1; i < n_neg; i++)
-    {
-      if (comp_frac(A[i][v], max) == 1)
-      {
-        max = A[i][v];
-      }
-    }
-
+      max = comp_frac(A[i][v], max) == 1 ? A[i][v] : max;
+     
+    // check the remaining values, they can't be negative!
     for (i = n_neg; i < rows; i++)
     {
       if (sign(A[i][v]) == -1)
-      {
         return false;
-      }
     }
 
-    // final comparison!
+    // if the smallest of the pos is larger than the largest of the negative
+    // return true!
     return (comp_frac(min, max) == 1);
   }
 }
 
-bool fm(size_t rows, size_t cols, int a[rows][cols],
-        int c[rows])
+bool fm(size_t rows, size_t cols, signed char a[rows][cols],
+        signed char c[rows])
 {
   //Variables
   size_t i, j;
@@ -335,8 +314,8 @@ int main()
   // False
   int cols = 2;
   int rows = 4;
-  int A[4][2] = {{-115, 104}, {-72, 59}, {113, 21}, {-17, -110}};
-  int C[4] = {113, 46, -51, -71};
+  signed char A[4][2] = {{-115, 104}, {-72, 59}, {113, 21}, {-17, -110}};
+  signed char C[4] = {113, 46, -51, -71};
 
   // int cols = 2;
   // int rows = 7;
