@@ -4,23 +4,12 @@
 #include <string.h>
 #include <inttypes.h>
 
-typedef struct frac frac;
-
-struct frac
+typedef struct frac
 {
   intmax_t n;
   intmax_t d;
-};
+} frac;
 
-void *xmalloc(size_t size)
-{
-  void *p = malloc(size);
-  if (p == NULL)
-  {
-    printf("not enough memory");
-  }
-  return p;
-}
 
 /*
 * Function for finding out which sign the frac have
@@ -48,7 +37,7 @@ void printer(size_t rows, size_t cols, frac fracs[rows][cols])
 /*
  * greatest common divider for reducing fracs
  */
-intmax_t gcd_func(intmax_t a, intmax_t b)
+intmax_t gcd(intmax_t a, intmax_t b)
 {
   a = (a > 0) ? a : -a;
   b = (b > 0) ? b : -b;
@@ -69,10 +58,7 @@ intmax_t gcd_func(intmax_t a, intmax_t b)
 
 frac new_frac(int n, int d)
 {
-  frac f;
-  f.n = n;
-  f.d = d;
-  return f;
+  return (frac){.n = n, .d=d};
 }
 
 /*
@@ -83,12 +69,9 @@ frac reduce(frac f)
 {
   if (f.n != 0)
   {
-    intmax_t gcd = gcd_func(f.n, f.d);
-    while ((gcd = gcd_func(imaxabs(f.n), f.d)) != 1)
-    {
-      f.n /= gcd;
-      f.d /= gcd;
-    }
+    intmax_t gcd_v = gcd(f.n, f.d);
+    f.n /= gcd_v;
+    f.d /= gcd_v;
   }
   return f;
 }
@@ -178,7 +161,6 @@ void row_divide(size_t row, size_t rows, size_t cols, frac a[rows][cols])
     if (i != cols - 2)
       a[row][i] = div_frac(a[row][i], a[row][cols - 2]);
   }
-  // a[row][cols - 2] = (frac){.n = 1, .d = 1};
 }
 
 /*
@@ -196,9 +178,7 @@ int comp_frac(frac a, frac b)
 void sort_rows(size_t rows, size_t cols, frac a[rows][cols],
                size_t *n_pos, size_t *n_neg)
 {
-  // fprintf(stderr, "sorting time\n");
-  // printer(rows, cols, a);
-  int pos = 0;
+  int p = 0;
   size_t z = rows - 1;
   for (size_t i = 0; i <= z; i++)
   {
@@ -206,14 +186,12 @@ void sort_rows(size_t rows, size_t cols, frac a[rows][cols],
     if (t > 0)
     {
       (*n_pos)++;
-      swap_rows(i, pos++, rows, cols, a);
-      // printer(rows, cols, a);
+      swap_rows(i, p++, rows, cols, a);
     }
     else if (t == 0)
     {
       (*n_neg)--;
       swap_rows(i--, z--, rows, cols, a);
-      // printer(rows, cols, a);
     }
   }
 }
@@ -228,64 +206,53 @@ bool fm_frac(size_t rows, size_t cols, frac A[rows][cols])
   size_t i, j, l;
   // step 1
   size_t v = cols - 1; // The real amount of variables
-  size_t row_p = v - 1;
+  // size_t row_p = v - 1;
   // size_t s = rows;
   // step 2
   size_t n_pos = 0;
   size_t n_neg = rows;
   //Convert int array to frac array
   sort_rows(rows, cols, A, &n_pos, &n_neg);
-  // fprintf(stderr, "After sorting:\n");
-
-  // printer(rows, cols, A);
-
-  // fprintf(stderr, "Divide all rows!!\n");
+  
   for (i = 0; i < rows; i++)
   {
     row_divide(i, rows, cols, A);
   }
-  // printer(rows, cols, A);
-
-  // final part checking if there is a solution
-
-  // check if there is more variables
+  
+  // check if there are more variables to remove
   if (v > 1)
   {
-    // step 4
-    // if all pos or all negative == solvable!
+    // calulate the amount of needed columns for new matrix
     size_t r_new = rows - n_neg + n_pos * (n_neg - n_pos);
-    // not sure if ok here, should be ok?
-    // if (s_prim == 0)
-    // {
-    //   fprintf(stderr, "hepp\n");
-    //   return true;
-    // }
+    
+    // if all pos or all negative == solvable!
+    if (r_new == 0)
+      return true;
 
-    // create new array excluding the current variable
+    // create new array for exclusion of the current variable
     frac N[r_new][v];
-    // fprintf(stderr, "s_prim:%d, v:%d\n", s_prim, v);
     size_t r = 0;
     // for the creation of the new matrix
     frac frac = {.n = -1, .d = 1};
-    // fprintf(stderr, "n_neg: %d\n", n_neg);
-    for (i = 0; i < n_pos; i++)
+    for (i = 0; i < n_pos; i++) {
       for (j = n_pos; j < n_neg; j++)
       {
-        for (l = 0; l < row_p; l++)
+        for (l = 0; l < v; l++)
         {
           N[r][l] = add_frac(mul_frac(A[j][l], frac), A[i][l]);
         }
-        N[r][row_p] = add_frac(A[i][v], mul_frac(frac, A[j][v]));
+        // N[r][row_p] = add_frac(A[i][v], mul_frac(frac, A[j][v]));
         r++;
       }
+    }
     // Handle the ones without any of the current variable
     for (i = n_neg; i < rows; i++)
     {
-      for (j = 0; j < row_p; j++)
+      for (j = 0; j < v; j++)
       {
         N[r][j] = A[i][j];
       }
-      N[r][row_p] = A[i][v];
+      // N[r][row_p] = A[i][v];
       r++;
     }
 
