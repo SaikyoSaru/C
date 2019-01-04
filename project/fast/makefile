@@ -8,10 +8,10 @@ FILE	= fast
 execute: compile
 	./fm
 build:	
-	rm -f fast.o
-	$(CC) fast.c -g -o fast
+	rm -f test.o
+	$(CC) test.c -g -o test
 run:	
-	./fast
+	./test
 
 compile: clean $(FILE).o malloc.o main.o error.o
 	$(CC) $(CFLAGS) -o $(OUT) -static $(FILE).o malloc.o main.o error.o -lm

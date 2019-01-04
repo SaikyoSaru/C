@@ -123,6 +123,7 @@ static void check(char* wd, char* input, int seconds)
 		fclose(cfile);
 
 		result = fm(rows, cols, a, c);
+		fprintf(stderr, result);
 		if (seconds > 0) {
 			signal(SIGALRM, timeout);
 			alarm(seconds);
@@ -218,6 +219,7 @@ static void eval(unsigned seconds, size_t cols)
 		snprintf(input, sizeof input, "A%zu.%zu", cols, i);	
 		if (access(input, R_OK) != 0)
 			error("cannot read file \"%s/\"%s", wd, input);
+		fprintf(stderr, "file: %s", wd);
 		check(wd, input, seconds);
 	}
 
