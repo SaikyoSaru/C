@@ -42,20 +42,13 @@ int sign(frac frac)
  */
 intmax_t gcd(intmax_t a, intmax_t b)
 {	
-
 	a = (a > 0) ? a : -a;
 	b = (b > 0) ? b : -b;
 	while (a != b)
-	{
 		if (a > b)
-		{
 			a -= b;
-		}
 		else
-		{
 			b -= a;
-		}
-	}
 	return a;
 }
 
@@ -70,7 +63,7 @@ frac new_frac(int n, int d)
 frac reduce(frac f)
 {
 	if (f.n != 0 && f.d !=0)
-	{
+	{	
 		intmax_t gcd_v = gcd(f.n, f.d);
 		f.n /= gcd_v;
 		f.d /= gcd_v;
@@ -259,3 +252,4 @@ bool fm(size_t rows, size_t cols, signed char a[rows][cols],
 	// return the result of recursive function
 	return fm_frac(rows, cols + 1, A);
 }
+
